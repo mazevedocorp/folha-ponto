@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <title>Folha Ponto MAzevedo Corp</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="description" content="Sistema Digital de Ponto Eletrônico REP-P Portaria MTE nº 671/2021">
+
+  <!-- PWA & Mobile Standalone Capabilities -->
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="Folha Ponto">
+  <meta name="application-name" content="Folha Ponto MAzevedo">
+  <meta name="theme-color" content="#2563eb">
+
+  <!-- Manifest e Ícones PWA -->
+  <link rel="manifest" href="./manifest.json">
+  <link rel="icon" type="image/svg+xml" href="./icon.svg">
+  <link rel="apple-touch-icon" href="./icon-192.png">
+
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    html, body {
+      width: 100vw;
+      height: 100vh;
+      height: 100dvh;
+      overflow: hidden;
+      background-color: #f4f7fb;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    }
+
+    /* Iframe 100% Fullscreen sem bordas nem chrome de navegador */
+    #ponto-frame {
+      width: 100vw;
+      height: 100vh;
+      height: 100dvh;
+      position: fixed;
+      top: 0;
+      left: 0;
+      border: none;
+      margin: 0;
+      padding: 0;
+      z-index: 10;
+      background-color: #f4f7fb;
+    }
+
+    /* Banner Flutuante de Instalação (se não for standalone) */
+    #install-banner {
+      display: none;
+      position: fixed;
+      bottom: 16px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 100;
+      background: #ffffff;
+      border: 1px solid #bfdbfe;
+      box-shadow: 0 10px 25px -5px rgba(37, 99, 235, 0.25), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+      padding: 10px 16px;
+      border-radius: 9999px;
+      align-items: center;
+      gap: 12px;
+      max-width: 90vw;
+      animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    @keyframes slideUp {
+      from {
+        opacity: 0;
+        transform: translate(-50%, 20px);
+      }
+      to {
+        opacity: 1;
+        transform: translate(-50%, 0);
+      }
+    }
+
+    .install-btn {
+      background: #2563eb;
+      color: #ffffff;
+      border: none;
+      padding: 8px 16px;
+      border-radius: 9999px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      transition: background-color 0.2s;
+    }
+
+    .install-btn:hover {
+      background: #1d4ed8;
+    }
+
+    .close-btn {
+      background: transparent;
+      border: none;
+      color: #94a3b8;
+      font-size: 18px;
+      cursor: pointer;
+      line-height: 1;
+      padding: 4px;
+    }
+
+    /* Splash / Loading inicial do Gateway */
+    #gateway-loader {
+      position: fixed;
+      inset: 0;
+      background: #f4f7fb;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      z-index: 20;
+      transition: opacity 0.4s ease;
+    }
+
+    .loader-icon {
+      width: 72px;
+      height: 72px;
+      border-radius: 20px;
+      background: #2563eb;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-weight: bold;
+      font-size: 32px;
+      box-shadow: 0 10px 20px rgba(37, 99, 235, 0.3);
+      margin-bottom: 16px;
+      animation: pulse 1.5s infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.04); }
+    }
+
+    .loader-title {
+      font-size: 16px;
+      font-weight: 700;
+      color: #1e293b;
+    }
+
+    .loader-sub {
+      font-size: 12px;
+      color: #64748b;
+      margin-top: 4px;
+    }
+
+    /* Botão sutil de configuração de URL no canto superior */
+    #cfg-toggle {
+      position: fixed;
+      top: 10px;
+      right: 10px;
+      z-index: 15;
+      background: rgba(255, 255, 255, 0.85);
+      backdrop-filter: blur(4px);
+      border: 1px solid #cbd5e1;
+      border-radius: 8px;
+      padding: 6px 10px;
+      font-size: 11px;
+      color: #475569;
+      cursor: pointer;
+      opacity: 0.6;
+      transition: opacity 0.2s;
+    }
+    #cfg-toggle:hover { opacity: 1; }
+
+    /* Modal de Configuração de URL do Apps Script */
+    #cfg-modal {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 23, 42, 0.6);
+      backdrop-filter: blur(4px);
+      z-index: 200;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+    }
+
+    .modal-box {
+      background: white;
+      border-radius: 16px;
+      padding: 20px;
+      max-width: 420px;
+      width: 100%;
+      box-shadow: 0 20px 25px -5px rgba(0,0,0,0.2);
+    }
+  </style>
+</head>
+<body>
+
+  <!-- TELA DE CARREGAMENTO DO APP SHELL -->
+  <div id="gateway-loader">
+    <div class="loader-icon">M</div>
+    <div class="loader-title">MAzevedo Corp</div>
+    <div class="loader-sub">Carregando Folha de Ponto Digital...</div>
+  </div>
+
+  <!-- IFRAME FULLSCREEN DO GOOGLE APPS SCRIPT -->
+  <!-- Permite geolocalização (*), câmera e clipboard para conformidade MTE 671 -->
+  <iframe
+    id="ponto-frame"
+    src="about:blank"
+    allow="geolocation *; camera *; clipboard-write *"
+    sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-modals"
+    title="Folha Ponto MAzevedo Corp">
+  </iframe>
+
+  <!-- BANNER FLUTUANTE DE INSTALAÇÃO PWA -->
+  <div id="install-banner">
+    <span style="font-size: 18px;">📲</span>
+    <span style="font-size: 12px; color: #1e293b; font-weight: 500;">Instale na tela inicial:</span>
+    <button class="install-btn" onclick="executarInstalacaoPwa()">Instalar App</button>
+    <button class="close-btn" onclick="fecharBannerInstalacao()">×</button>
+  </div>
+
+  <!-- BOTÃO DISCRETO DE AJUSTE DE URL (PARA O RH/ADMINISTRADOR) -->
+  <button id="cfg-toggle" onclick="abrirConfigUrl()" title="Configurar URL do WebApp">⚙️ URL</button>
+
+  <!-- MODAL DE CONFIGURAÇÃO DA URL DO WEBAPP -->
+  <div id="cfg-modal">
+    <div class="modal-box">
+      <h3 style="font-size: 15px; font-weight: 700; color: #1e293b; margin-bottom: 8px;">Configuração do Gateway PWA</h3>
+      <p style="font-size: 12px; color: #64748b; margin-bottom: 14px;">
+        Informe a URL do WebApp do Google Apps Script implantado para o sistema Folha Ponto:
+      </p>
+      <input id="input-webapp-url" type="url" placeholder="https://script.google.com/macros/s/.../exec?view=mobile" style="width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 12px; margin-bottom: 14px; outline: none;" />
+      <div style="display: flex; gap: 8px; justify-content: flex-end;">
+        <button onclick="fecharConfigUrl()" style="padding: 8px 14px; background: #f1f5f9; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 12px; font-weight: 600; cursor: pointer; color: #475569;">Cancelar</button>
+        <button onclick="salvarConfigUrl()" style="padding: 8px 14px; background: #2563eb; color: white; border: none; border-radius: 8px; font-size: 12px; font-weight: 600; cursor: pointer;">Salvar e Recarregar</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // URL Padrão do WebApp Google Apps Script (pode ser sobrescrita via localStorage ou parâmetro ?src=)
+    const DEFAULT_WEBAPP_URL = 'https://script.google.com/macros/s/AKfycbwMAZEVEDO_FOLHA_PONTO_CORE/exec?view=mobile';
+    const STORAGE_KEY = 'mazevedo_webapp_url';
+
+    let deferredPrompt = null;
+
+    // 1. Registro do Service Worker para conformidade PWA
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./sw.js').then((reg) => {
+          console.log('[PWA Gateway] Service Worker registrado com sucesso. Escopo:', reg.scope);
+        }).catch((err) => {
+          console.warn('[PWA Gateway] Falha ao registrar Service Worker:', err);
+        });
+      });
+    }
+
+    // 2. Resolução da URL do WebApp e inicialização do iframe fullscreen
+    function obterUrlDestino() {
+      const urlParams = new URLSearchParams(window.location.search);
+      const urlViaParam = urlParams.get('src') || urlParams.get('webapp');
+      if (urlViaParam) {
+        localStorage.setItem(STORAGE_KEY, urlViaParam);
+        return urlViaParam;
+      }
+      return localStorage.getItem(STORAGE_KEY) || DEFAULT_WEBAPP_URL;
+    }
+
+    function inicializarIframe() {
+      const iframe = document.getElementById('ponto-frame');
+      const loader = document.getElementById('gateway-loader');
+      const targetUrl = obterUrlDestino();
+
+      iframe.src = targetUrl;
+
+      // Oculta a tela de splash quando o iframe carrega
+      iframe.onload = () => {
+        setTimeout(() => {
+          if (loader) {
+            loader.style.opacity = '0';
+            setTimeout(() => loader.style.display = 'none', 400);
+          }
+        }, 500);
+      };
+
+      // Fallback de segurança para remover o loader caso o evento onload demore
+      setTimeout(() => {
+        if (loader && loader.style.display !== 'none') {
+          loader.style.opacity = '0';
+          setTimeout(() => loader.style.display = 'none', 400);
+        }
+      }, 3500);
+    }
+
+    // 3. Detecção de Modo Standalone e Gerenciamento de Instalação PWA
+    function isModoStandalone() {
+      return window.matchMedia('(display-mode: standalone)').matches ||
+             window.navigator.standalone === true ||
+             document.referrer.includes('android-app://');
+    }
+
+    window.addEventListener('beforeinstallprompt', (e) => {
+      e.preventDefault();
+      deferredPrompt = e;
+      if (!isModoStandalone()) {
+        const banner = document.getElementById('install-banner');
+        if (banner) banner.style.display = 'flex';
+      }
+    });
+
+    function executarInstalacaoPwa() {
+      if (deferredPrompt) {
+        deferredPrompt.prompt();
+        deferredPrompt.userChoice.then((choiceResult) => {
+          if (choiceResult && choiceResult.outcome === 'accepted') {
+            console.log('[PWA Gateway] Instalação aceita pelo usuário.');
+            fecharBannerInstalacao();
+          }
+          deferredPrompt = null;
+        });
+      } else {
+        alert('Para instalar este app:\n- No Android: toque no menu (⋮) e em "Instalar aplicativo".\n- No iPhone: toque em Compartilhar (⎋) e em "Adicionar à Tela de Início".');
+      }
+    }
+
+    function fecharBannerInstalacao() {
+      const banner = document.getElementById('install-banner');
+      if (banner) banner.style.display = 'none';
+    }
+
+    // 4. Modal de Configuração de URL
+    function abrirConfigUrl() {
+      const modal = document.getElementById('cfg-modal');
+      const input = document.getElementById('input-webapp-url');
+      if (input) input.value = localStorage.getItem(STORAGE_KEY) || DEFAULT_WEBAPP_URL;
+      if (modal) modal.style.display = 'flex';
+    }
+
+    function fecharConfigUrl() {
+      const modal = document.getElementById('cfg-modal');
+      if (modal) modal.style.display = 'none';
+    }
+
+    function salvarConfigUrl() {
+      const input = document.getElementById('input-webapp-url');
+      const novaUrl = input ? input.value.trim() : '';
+      if (novaUrl) {
+        localStorage.setItem(STORAGE_KEY, novaUrl);
+        fecharConfigUrl();
+        window.location.reload();
+      }
+    }
+
+    // Inicialização ao carregar
+    document.addEventListener('DOMContentLoaded', () => {
+      inicializarIframe();
+      if (isModoStandalone()) {
+        // Se já estiver rodando em standalone, oculta botão de config e banner
+        const banner = document.getElementById('install-banner');
+        if (banner) banner.style.display = 'none';
+      }
+    });
+  </script>
+</body>
+</html>
