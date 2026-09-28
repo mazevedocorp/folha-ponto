@@ -243,9 +243,30 @@
     </div>
   </div>
 
+  <!-- TELA DE CONFIGURAÇÃO INICIAL (SE URL FOR PLACEHOLDER OU NÃO DEFINIDA) -->
+  <div id="setup-screen" style="display: none; position: fixed; inset: 0; background: #f4f7fb; z-index: 50; flex-direction: column; align-items: center; justify-content: center; padding: 20px;">
+    <div style="background: white; border-radius: 24px; padding: 28px 24px; max-width: 440px; width: 100%; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1), 0 8px 10px -6px rgba(0,0,0,0.05); text-align: center; border: 1px solid #e2e8f0;">
+      <div style="width: 64px; height: 64px; border-radius: 20px; background: #2563eb; color: white; font-weight: bold; font-size: 28px; display: flex; align-items: center; justify-content: center; margin: 0 auto 16px; box-shadow: 0 10px 15px -3px rgba(37, 99, 235, 0.3);">M</div>
+      <h2 style="font-size: 18px; font-weight: 700; color: #0f172a; margin-bottom: 6px;">Conectar Folha Ponto PWA</h2>
+      <p style="font-size: 13px; color: #64748b; margin-bottom: 20px; line-height: 1.5;">
+        Seu aplicativo PWA está publicado no GitHub Pages com sucesso! Para conectá-lo ao sistema, insira a URL do seu <strong>Web App do Google Apps Script</strong>:
+      </p>
+      <div style="text-align: left; margin-bottom: 16px;">
+        <label style="display: block; font-size: 11px; font-weight: 600; color: #475569; margin-bottom: 6px;">URL da Implantação do WebApp</label>
+        <input id="input-setup-url" type="url" placeholder="https://script.google.com/macros/s/AKfycb.../exec" style="width: 100%; padding: 12px 14px; border: 1px solid #cbd5e1; border-radius: 12px; font-size: 12px; outline: none; background: #f8fafc; color: #0f172a;" />
+        <p style="font-size: 11px; color: #94a3b8; margin-top: 6px;">Obtenha no Apps Script: <em>Implantar &gt; Gerenciar implantações &gt; URL do WebApp</em>.</p>
+      </div>
+      <button onclick="conectarSetupUrl()" style="width: 100%; padding: 12px; background: #2563eb; color: white; border: none; border-radius: 12px; font-size: 13px; font-weight: 600; cursor: pointer; transition: background 0.2s; box-shadow: 0 4px 6px -1px rgba(37, 99, 235, 0.2);">Conectar e Iniciar Aplicativo</button>
+      <div style="margin-top: 18px; padding-top: 14px; border-top: 1px solid #f1f5f9; font-size: 11px; color: #64748b; line-height: 1.5;">
+        💡 <strong>Dica:</strong> Você também pode abrir o link já conectado diretamente:<br/>
+        <code style="word-break: break-all; background: #f1f5f9; padding: 4px 8px; border-radius: 6px; display: inline-block; margin-top: 6px; font-size: 10px; color: #2563eb;">https://mazevedocorp.github.io/folha-ponto/?src=SUA_URL_AQUI</code>
+      </div>
+    </div>
+  </div>
+
   <script>
     // URL Padrão do WebApp Google Apps Script (pode ser sobrescrita via localStorage ou parâmetro ?src=)
-    const DEFAULT_WEBAPP_URL = 'https://script.google.com/macros/s/AKfycbwMAZEVEDO_FOLHA_PONTO_CORE/exec?view=mobile';
+    const DEFAULT_WEBAPP_URL = 'https://script.google.com/macros/s/AKfycbztBzOvNfhzYIGwExoVUMdiP4T4OqQiXrZtpU-j-Kt8sW5Zys3TgWPFrN5VMUuWtT8A/exec?view=mobile';
     const STORAGE_KEY = 'mazevedo_webapp_url';
 
     let deferredPrompt = null;
@@ -272,11 +293,25 @@
       return localStorage.getItem(STORAGE_KEY) || DEFAULT_WEBAPP_URL;
     }
 
+    function isUrlInvalidaOuPlaceholder(url) {
+      if (!url) return true;
+      return url.includes('AKfycbwMAZEVEDO') || url.includes('SEU_DEPLOY_ID') || url.includes('SEU_SCRIPT_ID');
+    }
+
     function inicializarIframe() {
       const iframe = document.getElementById('ponto-frame');
       const loader = document.getElementById('gateway-loader');
+      const setupScreen = document.getElementById('setup-screen');
       const targetUrl = obterUrlDestino();
 
+      // Se a URL ainda for o placeholder inicial, não carrega erro do Google e exibe tela de setup
+      if (isUrlInvalidaOuPlaceholder(targetUrl)) {
+        if (loader) loader.style.display = 'none';
+        if (setupScreen) setupScreen.style.display = 'flex';
+        return;
+      }
+
+      if (setupScreen) setupScreen.style.display = 'none';
       iframe.src = targetUrl;
 
       // Oculta a tela de splash quando o iframe carrega
@@ -296,6 +331,21 @@
           setTimeout(() => loader.style.display = 'none', 400);
         }
       }, 3500);
+    }
+
+    function conectarSetupUrl() {
+      const input = document.getElementById('input-setup-url');
+      let url = input ? input.value.trim() : '';
+      if (!url) {
+        alert('Por favor, informe a URL do WebApp do Google Apps Script.');
+        return;
+      }
+      if (!url.startsWith('https://script.google.com/')) {
+        alert('A URL deve começar com https://script.google.com/macros/s/...');
+        return;
+      }
+      localStorage.setItem(STORAGE_KEY, url);
+      window.location.reload();
     }
 
     // 3. Detecção de Modo Standalone e Gerenciamento de Instalação PWA
