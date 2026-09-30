@@ -266,7 +266,7 @@
 
   <script>
     // URL Padrão do WebApp Google Apps Script (pode ser sobrescrita via localStorage ou parâmetro ?src=)
-    const DEFAULT_WEBAPP_URL = 'https://script.google.com/macros/s/AKfycbx6DGGtl8Jriv6IMWRmhs4FW4lSyQqc7SruP0dvIeGm3y0F2xwtAZNpIOydio7DSEE/exec?view=mobile';
+    const DEFAULT_WEBAPP_URL = 'https://script.google.com/macros/s/AKfycbw4jiC9Fw39RXwrX6tCIGCsXTtJpEJI6zfkW4J2On4AU1oofi2I5Fmzumatd41nkjJS/exec?view=mobile';
     const STORAGE_KEY = 'mazevedo_webapp_url';
 
     let deferredPrompt = null;
@@ -286,16 +286,18 @@
     function obterUrlDestino() {
       const urlParams = new URLSearchParams(window.location.search);
       const urlViaParam = urlParams.get('src') || urlParams.get('webapp');
+      const forceLogin = (urlParams.get('login') === '1' || urlParams.get('trocar') === '1' || urlParams.get('logout') === '1') ? '&login=1' : '';
+
       if (urlViaParam) {
         localStorage.setItem(STORAGE_KEY, urlViaParam);
-        return urlViaParam;
+        return urlViaParam + forceLogin;
       }
       const saved = localStorage.getItem(STORAGE_KEY);
-      if (saved && (saved.includes('AKfycbztBzOvNfhzYIGwExoVUMdiP4T4OqQiXrZtpU-j-Kt8sW5Zys3TgWPFrN5VMUuWtT8A') || isUrlInvalidaOuPlaceholder(saved))) {
+      if (saved && (!saved.includes('AKfycbzEFpb2_136dQkTDMkUH8ZUIrzGLbmqmU1TO3ivaD8lIM5K1dt1dfxq7nyvngdEfCVE') || isUrlInvalidaOuPlaceholder(saved))) {
         localStorage.removeItem(STORAGE_KEY);
-        return DEFAULT_WEBAPP_URL;
+        return DEFAULT_WEBAPP_URL + forceLogin;
       }
-      return saved || DEFAULT_WEBAPP_URL;
+      return (saved || DEFAULT_WEBAPP_URL) + forceLogin;
     }
 
     function isUrlInvalidaOuPlaceholder(url) {
