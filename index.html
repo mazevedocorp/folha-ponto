@@ -266,7 +266,7 @@
 
   <script>
     // URL Padrão do WebApp Google Apps Script (pode ser sobrescrita via localStorage ou parâmetro ?src=)
-    const DEFAULT_WEBAPP_URL = 'https://script.google.com/macros/s/AKfycbw4jiC9Fw39RXwrX6tCIGCsXTtJpEJI6zfkW4J2On4AU1oofi2I5Fmzumatd41nkjJS/exec?view=mobile';
+    const DEFAULT_WEBAPP_URL = 'https://script.google.com/macros/s/AKfycbxxegj2jR3v0ttJ_Rgak-SLYTquCjJCa4RSMNuJoKo3i0-gpjPQNP_wvK6nXKMotoE/exec?view=mobile';
     const STORAGE_KEY = 'mazevedo_webapp_url';
 
     let deferredPrompt = null;
@@ -293,7 +293,7 @@
         return urlViaParam + forceLogin;
       }
       const saved = localStorage.getItem(STORAGE_KEY);
-      if (saved && (!saved.includes('AKfycbw4jiC9Fw39RXwrX6tCIGCsXTtJpEJI6zfkW4J2On4AU1oofi2I5Fmzumatd41nkjJS') || isUrlInvalidaOuPlaceholder(saved))) {
+      if (saved && (!saved.includes('AKfycbxxegj2jR3v0ttJ_Rgak-SLYTquCjJCa4RSMNuJoKo3i0-gpjPQNP_wvK6nXKMotoE') || isUrlInvalidaOuPlaceholder(saved))) {
         localStorage.removeItem(STORAGE_KEY);
         return DEFAULT_WEBAPP_URL + forceLogin;
       }
@@ -426,4 +426,3 @@
   </script>
 </body>
 </html>
-
