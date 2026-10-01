@@ -209,13 +209,16 @@
 
   <!-- IFRAME FULLSCREEN DO GOOGLE APPS SCRIPT -->
   <!-- Permite geolocalização (*), câmera e clipboard para conformidade MTE 671 -->
+  <!-- ATENÇÃO: Sem atributo sandbox — o sandbox com allow-same-origin num contexto cross-origin
+       (mazevedocorp.github.io ≠ script.google.com) bloqueia o postMessage do google.script.run.
+       O isolamento de segurança é garantido pela política de mesma origem (CORS) do navegador. -->
   <iframe
     id="ponto-frame"
     src="about:blank"
     allow="geolocation *; camera *; clipboard-write *"
-    sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-modals"
     title="Folha Ponto MAzevedo Corp">
   </iframe>
+
 
   <!-- BANNER FLUTUANTE DE INSTALAÇÃO PWA -->
   <div id="install-banner">
@@ -266,7 +269,7 @@
 
   <script>
     // URL Padrão do WebApp Google Apps Script (pode ser sobrescrita via localStorage ou parâmetro ?src=)
-    const DEFAULT_WEBAPP_URL = 'https://script.google.com/macros/s/AKfycbxxegj2jR3v0ttJ_Rgak-SLYTquCjJCa4RSMNuJoKo3i0-gpjPQNP_wvK6nXKMotoE/exec?view=mobile';
+    const DEFAULT_WEBAPP_URL = 'https://script.google.com/macros/s/AKfycbxG7YgbThyIdY4jaLqNT50eRkre2cp-MmRfD6j7jxPFu3VwdJIBTRbLOJz_kxI7Ds_U/exec?view=mobile';
     const STORAGE_KEY = 'mazevedo_webapp_url';
 
     let deferredPrompt = null;
@@ -293,7 +296,7 @@
         return urlViaParam + forceLogin;
       }
       const saved = localStorage.getItem(STORAGE_KEY);
-      if (saved && (!saved.includes('AKfycbxxegj2jR3v0ttJ_Rgak-SLYTquCjJCa4RSMNuJoKo3i0-gpjPQNP_wvK6nXKMotoE') || isUrlInvalidaOuPlaceholder(saved))) {
+      if (saved && (!saved.includes('AKfycbxG7YgbThyIdY4jaLqNT50eRkre2cp-MmRfD6j7jxPFu3VwdJIBTRbLOJz_kxI7Ds_U') || isUrlInvalidaOuPlaceholder(saved))) {
         localStorage.removeItem(STORAGE_KEY);
         return DEFAULT_WEBAPP_URL + forceLogin;
       }
